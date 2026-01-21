@@ -1,16 +1,17 @@
 import os
 from typing import List
 from dotenv import load_dotenv
+
 load_dotenv()
 # ======================= БАЗА ДАННЫХ =======================
 
 DB_CONFIG = {
-    "host": os.getenv("DB_HOST"),
-    "port": int(os.getenv("DB_PORT", 3306)), # Обязательно числом
-    "user": os.getenv("DB_USER"),
-    "password": os.getenv("DB_PASSWORD"),
-    "database": os.getenv("DB_NAME"),
-    "autocommit": True
+    'host': 'moyeriblurud.beget.app',
+    'port': 3306,
+    'user': 'smily_users',
+    'password': '0L%iY*FM1RH1',
+    'database': 'smily_users',
+    'autocommit': True
 }
 
 # ======================= ОБЩИЕ ИГРОВЫЕ НАСТРОЙКИ =======================
@@ -104,7 +105,7 @@ MINES = {
     # Опыт за игру
     "exp_win": 0.9,  # Базовый опыт за победу
     "exp_lose": 0.475,  # Опыт за проигрыш
-    "exp_factor": 0.35 # Множитель
+    "exp_factor": 0.35  # Множитель
 
 }
 
