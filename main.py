@@ -137,14 +137,14 @@ def build_bot(token: str):
     # Проверка групповых игр рулетки каждые 3 секунды
     app.job_queue.run_repeating(
         check_all_games,
-        interval=3,
+        interval=5,
         first=10
     )
 
     # Начисление пассивного дохода каждые 3 секунды
     app.job_queue.run_repeating(
         check_all_incomes,
-        interval=3,
+        interval=60,
         first=10
     )
 

@@ -6,6 +6,7 @@ load_dotenv()
 
 DB_CONFIG = {
     "host": os.getenv("DB_HOST"),
+    "port": int(os.getenv("DB_PORT", 3306)), # Обязательно числом
     "user": os.getenv("DB_USER"),
     "password": os.getenv("DB_PASSWORD"),
     "database": os.getenv("DB_NAME"),
@@ -73,7 +74,7 @@ STEAL_COOLDOWN = 45  # Минут между попытками кражи
 EXP_CASE_COOLDOWN = 45
 # Групповые игры (рулетка)
 GROUP_GAME_DURATION = 20  # Секунд до старта игры
-BETTING_DEADLINE_OFFSET = 3  # За сколько секунд до старта закрывается приём ставок
+BETTING_DEADLINE_OFFSET = 5  # За сколько секунд до старта закрывается приём ставок
 
 # ======================= БЛЭКДЖЕК =======================
 
