@@ -1,0 +1,11 @@
+# Окружение и секреты
+.env
+venv/
+.venv/
+
+# IDE (PyCharm)
+.idea/
+
+# Python кэш
+__pycache__/
+*.py[cod]
