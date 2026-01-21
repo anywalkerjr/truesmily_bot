@@ -427,7 +427,7 @@ BUSINESS_LIST = [
     # },
 ]
 
-TOKEN = os.getenv("TOKEN")
+TOKEN = os.getenv("BOT_TOKEN")
 
 REF_SYSTEM = {
     "ref_get": {
