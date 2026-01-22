@@ -50,11 +50,15 @@ async def shop_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data[0].startswith("shop_buy"):
         business_id = int(data[0].split('_')[-1])
         message = await handle_shop_purchase(user.id, user.username, business_id)
+        context.user_data['shop_index'] = index+1
+        keyboard = [[
+            InlineKeyboardButton("◀️ Назад", callback_data=f"shop_prev:{user.id}"),
+        ]]
 
         # Если покупка успешна - показываем новое сообщение
         if '✅' in message:
             await query.answer()
-            await query.edit_message_text(message, parse_mode="Markdown")
+            await query.edit_message_text(message, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
         else:
             await query.answer(text=message, show_alert=True)
 

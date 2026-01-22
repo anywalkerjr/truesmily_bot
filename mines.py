@@ -297,9 +297,11 @@ async def handle_mines_action(update: Update, context: ContextTypes.DEFAULT_TYPE
                 steps = len(open_cells)
                 multiplier = count_multiplier(steps, field.count(0))
                 win_amount = int(bet * multiplier)
-
+                win_bonus = get_user_business_bonuses(user_id).get("win_multiplier", 0)
+                win_bonus_amount = int(win_amount * win_bonus)
+                bonus_text = f"❇️ Бонус: {spaced_num(win_bonus_amount)} $miles\n\n" if win_bonus_amount else "\n"
                 current_balance = get_balance(user_id, username)
-                set_balance(user_id, current_balance + win_amount)
+                set_balance(user_id, current_balance + win_amount + win_bonus_amount)
 
                 exp_gained = calculate_exp_reward(multiplier, bet, user_id, "win")
                 update_experience(user_id, exp_gained)
@@ -311,7 +313,8 @@ async def handle_mines_action(update: Update, context: ContextTypes.DEFAULT_TYPE
                     f"💣 Всего мин: {field.count(0)}\n"
                     f"🟠 Коэффициент: x{multiplier}\n\n"
                     f"💵 Ставка: {spaced_num(bet)} $miles\n"
-                    f"💰 Выигрыш: {spaced_num(win_amount)} $miles\n\n"
+                    f"💰 Выигрыш: {spaced_num(win_amount)} $miles\n"
+                    f"{bonus_text}"
                     f"✨ Получено: {exp_gained} EXP\n"
                     f"⭐️ Уровень: {level} ({xp}/{next_level_xp})\n"
                     f"💰 Баланс: {spaced_num(get_balance(user_id, username))} $miles"
@@ -335,9 +338,12 @@ async def handle_mines_action(update: Update, context: ContextTypes.DEFAULT_TYPE
         steps = len(open_cells)
         multiplier = count_multiplier(steps, field.count(0))
         win_amount = int(bet * multiplier)
+        win_bonus = get_user_business_bonuses(user_id).get("win_multiplier", 0)
+        win_bonus_amount = int(win_amount * win_bonus)
+        bonus_text = f"❇️ Бонус: {spaced_num(win_bonus_amount)} $miles\n\n" if win_bonus_amount else "\n"
 
         current_balance = get_balance(user_id, username)
-        set_balance(user_id, current_balance + win_amount)
+        set_balance(user_id, current_balance + win_amount + win_bonus_amount)
 
         exp_gained = calculate_exp_reward(multiplier, bet, user_id, "win")
         update_experience(user_id, exp_gained)
@@ -350,7 +356,8 @@ async def handle_mines_action(update: Update, context: ContextTypes.DEFAULT_TYPE
             f"🟢 Открыто клеток: {steps}\n"
             f"🟠 Коэффициент: x{multiplier}\n\n"
             f"💵 Ставка: {spaced_num(bet)} $miles\n"
-            f"💰 Выигрыш: {spaced_num(win_amount)} $miles\n\n"
+            f"💰 Выигрыш: {spaced_num(win_amount)} $miles\n"
+            f"{bonus_text}"
             f"✨ Получено: {exp_gained} EXP\n"
             f"⭐️ Уровень: {level} ({xp}/{next_level_xp})\n"
             f"💰 Баланс: {spaced_num(get_balance(user_id, username))} $miles"

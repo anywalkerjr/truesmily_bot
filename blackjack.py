@@ -166,6 +166,7 @@ async def blackjack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             "❌ У тебя уже есть активная игра. Заверши её, чтобы начать новую."
         )
+        await send_blackjack_state(update, context, user_id, False)
         return
 
     # Проверка наличия аргументов
@@ -340,20 +341,23 @@ async def handle_blackjack_action(update: Update, context: ContextTypes.DEFAULT_
         game_result = calculate_game_result(player_cards, dealer_cards, bet)
         result = game_result['result']
         winnings = game_result['winnings']
-
+        win_bonus_amount = 0
         # Начисляем выигрыш
         if winnings > 0:
+            win_bonus = get_user_business_bonuses(user_id).get("win_multiplier", 0)
+            win_bonus_amount = int(winnings * win_bonus)
             current_balance = get_balance(user_id, username)
-            set_balance(user_id, current_balance + winnings)
+            set_balance(user_id, current_balance + winnings + win_bonus_amount)
 
+        bonus_text = f"\n❇️ Бонус: {spaced_num(win_bonus_amount)} $miles" if win_bonus_amount else ""
         # Начисляем опыт
         exp_gained = calculate_exp_reward(result, bet, user_id)
         update_experience(user_id, exp_gained)
 
         # Формируем сообщение о результате
         result_messages = {
-            'blackjack': f"🎉 *BLACKJACK!* Ты выиграл {spaced_num(winnings)} $miles!",
-            'win': f"🏆 *Победа!* Ты выиграл {spaced_num(winnings)} $miles!",
+            'blackjack': f"🎉 *BLACKJACK!* Ты выиграл {spaced_num(winnings)} $miles!"  + bonus_text,
+            'win': f"🏆 *Победа!* Ты выиграл {spaced_num(winnings)} $miles!" + bonus_text,
             'push': f"🤝 *Ничья.* Ставка возвращена.",
             'loss': f"❌ *Проигрыш.* Ты потерял {spaced_num(bet)} $miles."
         }

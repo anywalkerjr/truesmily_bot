@@ -21,7 +21,7 @@ from helpers import (
     check_lucky_wheel_availability, check_steal_availability,
     get_cursor, update_user, check_deposit_ready, update_bank_balance, claim_bank_balance, get_all_users_with_deposit,
     safe_reply_text, check_promocode, check_promocode_requirements, activate_promocode,
-    get_user_by_username, try_activate_promocode, check_exp_case_availability
+    get_user_by_username, try_activate_promocode, check_exp_case_availability, calculate_total_income
 )
 from helpers import get_user_business_profile, get_user_business_bonuses
 
@@ -266,11 +266,7 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             biz_text = f"📍 У вас {count} бизнесов:\n"
 
-        passive_income = 0
-        for biz_id in profile['businesses_ids']:
-            biz = BUSINESS_LIST[biz_id - 1]
-            biz_text += f" {biz['emoji']} {biz['name']}\n"
-            passive_income += biz['income']
+        passive_income = calculate_total_income(user.id)
 
         biz_text += f"\n🤑 Пассивный доход: {spaced_num(passive_income)} $miles/час"
 
@@ -632,8 +628,12 @@ async def spin(update: Update, context: ContextTypes.DEFAULT_TYPE):
             win = cashback
             msg += f"\n🍀 Повезло! Возвращено 20% ({spaced_num(cashback)} $miles)"
 
+    win_bonus = get_user_business_bonuses(user_id).get("win_multiplier", 0)
+    win_bonus_amount = int(win * win_bonus)
+    bonus_text = f"❇️ Бонус: {spaced_num(win_bonus_amount)} $miles\n" if win_bonus_amount else ""
+
     # Начисляем выигрыш и опыт
-    set_balance(user_id, get_balance(user_id, username) + win)
+    set_balance(user_id, get_balance(user_id, username) + win + win_bonus_amount)
     update_experience(user_id, gained_exp)
 
     # Информация об уровне
@@ -650,6 +650,7 @@ async def spin(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"\t\t{result_text}\n\n"
         f"{msg}\n"
         f"{win_text if win > 0 else lose_text}"
+        f"{bonus_text}"
         f"✨ Опыт: +{gained_exp} EXP\n"
         f"⭐️ Уровень: {current_level} ({current_xp}/{next_level_xp})\n"
         f"💰 Баланс: {spaced_num(get_balance(user_id, username))} $miles"
@@ -858,9 +859,9 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                          )
 
     await asyncio.sleep(1.0)
-
+    hack_luck_chance = get_user_business_bonuses(user_id).get("hack_luck_chance", 0)
     # Проверка успеха
-    if random.randint(0, 100) >= HACK["success_chance"]:
+    if random.randint(0, 100) >= HACK["success_chance"] - hack_luck_chance:
         await progress_msg.edit_text("❌ *Взлом не удался!*", parse_mode="Markdown")
         return
 
@@ -924,11 +925,11 @@ async def deposit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await safe_reply_text(update.message,
                           "🏦 *Банковские вклады*\n"
                           "Заложи часть баланса и получи гарантированный доход без риска.\n\n"
-                          "1️⃣ $10 000 — 6 часов, *+15%*\n"
-                          "2️⃣ $100 000 — 12 часов, *+20%*\n"
-                          "3️⃣ $1 000 000 — 24 часа, *+30%*\n"
-                          "4️⃣ $10 000 000 — 48 часов, *+40%*\n"
-                          "5️⃣ $100 000 000 — 96 часов, *+60%*\n\n"
+                          "1️⃣ $100 000 — 6 часов, *+20%*\n"
+                          "2️⃣ $1 000 000 — 12 часов, *+30%*\n"
+                          "3️⃣ $10 000 000 — 24 часа, *+40%*\n"
+                          "4️⃣ $100 000 000 — 48 часов, *+50%*\n"
+                          "5️⃣ $1 000 000 000 — 96 часов, *+60%*\n\n"
                           "Выбери номер вклада ниже 👇",
                           reply_markup=InlineKeyboardMarkup(keyboard),
                           parse_mode="Markdown"

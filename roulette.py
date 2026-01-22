@@ -118,7 +118,7 @@ def apply_luck_cashback(user_id: int, username: str, bet_amount: int) -> Tuple[i
         current_balance = get_balance(user_id, username)
         set_balance(user_id, current_balance + cashback)
 
-        bonus_text = f"\n🍀 Тебе повезло! Возвращено 20% ({spaced_num(cashback)} $miles) от ставки!"
+        bonus_text = f"🍀 {username} повезло! Возвращено 20% ({spaced_num(cashback)} $miles) от ставки!"
         return cashback, bonus_text
 
     return 0, ''
@@ -351,10 +351,13 @@ async def play_solo_roulette(
     if won:
         multiplier = MULTIPLIERS[category]
         winnings = bet_amount * multiplier
+        win_bonus = get_user_business_bonuses(user_id).get("win_multiplier", 0)
+        win_bonus_amount = int(winnings * win_bonus)
+        bonus_text = f"❇️ Бонус: {spaced_num(win_bonus_amount)} $miles\n" if win_bonus_amount else ""
 
-        set_balance(user_id, get_balance(user_id, username) + winnings)
+        set_balance(user_id, get_balance(user_id, username) + winnings + win_bonus_amount)
 
-        result_text += f"🎉 Ты выиграл {spaced_num(winnings)} $miles!\n"
+        result_text += f"🎉 Ты выиграл {spaced_num(winnings)} $miles!\n" + bonus_text
     else:
         result_text += f"😢 Ты проиграл {spaced_num(bet_amount)} $miles.\n"
 
@@ -492,15 +495,18 @@ async def start_roulette_for_chat(chat_id: int, bot: Bot):
             # Выигрыш
             multiplier = MULTIPLIERS[category]
             winnings = amount * multiplier
+            win_bonus = get_user_business_bonuses(user_id).get("win_multiplier", 0)
+            win_bonus_amount = int(winnings * win_bonus)
+            bonus_text = f"\n  ❇️ Бонус: {spaced_num(win_bonus_amount)} $miles" if win_bonus_amount else ""
 
-            set_balance(user_id, get_balance(user_id, username) + winnings)
+            set_balance(user_id, get_balance(user_id, username) + winnings + win_bonus_amount)
 
             # Опыт
             exp_gained = calculate_roulette_exp(bet_type, True, amount, user_id)
             update_experience(user_id, exp_gained)
 
             win_log.append(
-                f"{display_name} +{spaced_num(winnings)} $miles (✨ +{exp_gained} EXP)"
+                f"{display_name} +{spaced_num(winnings)} $miles (✨ +{exp_gained} EXP)" + bonus_text
             )
         else:
             # Проигрыш

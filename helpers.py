@@ -290,8 +290,9 @@ def claim_bank_balance(user_id: int) -> Optional[int]:
         if user["deposit_end"] and datetime.now() < user["deposit_end"]:
             return None
 
+        deposit_income_bonus = get_user_business_bonuses(user_id).get('deposit_income_bonus', 0)
         # Переводим на баланс
-        claimed_amount = user["bank_balance"]
+        claimed_amount = user["bank_balance"] + deposit_income_bonus*user["bank_balance"]
         new_balance = user["balance"] + claimed_amount
 
         set_balance(user_id, new_balance)
@@ -709,7 +710,6 @@ def calculate_total_income(user_id: int) -> int:
         base_income = int(base_income * (1 + income_mult))
 
     return base_income
-
 
 # ======================= ГЕНЕРАЦИЯ ИЗОБРАЖЕНИЙ =======================
 
