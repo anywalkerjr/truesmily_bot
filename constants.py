@@ -6,11 +6,11 @@ load_dotenv()
 # ======================= БАЗА ДАННЫХ =======================
 
 DB_CONFIG = {
-    'host': 'moyeriblurud.beget.app',
-    'port': 3306,
-    'user': 'smily_users',
-    'password': '0L%iY*FM1RH1',
-    'database': 'smily_users',
+    'host': os.getenv("DB_HOST"),
+    'port': os.getenv("DB_PORT"),
+    'user': os.getenv("DB_USER"),
+    'password': os.getenv("DB_PASSWORD"),
+    'database': os.getenv("DB_NAME"),
     'autocommit': True
 }
 
@@ -39,7 +39,7 @@ EXP_MULTIPLIERS_BY_BET = [
 # Бонусы за уровень таланта
 TALENT_BONUSES = {
     "untouchable": -0.25,  # -0.1% защита от кражи за уровень
-    "agility": 0.05,  # +0.05% к краже за уровень
+    "agility": 0.5,  # +0.05% к краже за уровень
     "mastery": 0.1,  # было 0.2: +0.1 к множителю EXP за уровень (чтобы меньше разгонять EXP)
     "luck": 2  # +2% шанс на кэшбэк 20% за уровень
 }
@@ -62,9 +62,9 @@ TALENT_COSTS = {
 
 # Требования к уровню игрока для талантов
 TALENT_LEVEL_REQUIREMENTS = {
-    "untouchable": {"base": 2, "step": 3},  # Требуется 2 LVL, потом +3 за каждый уровень таланта
+    "untouchable": {"base": 2, "step": 2},
     "agility": {"base": 2, "step": 1},
-    "mastery": {"base": 1, "step": 1.5},
+    "mastery": {"base": 1, "step": 1.2},
     "luck": {"base": 4, "step": 2}
 }
 
@@ -104,8 +104,7 @@ BLACKJACK = {
 MINES = {
     # Опыт за игру
     "exp_win": 0.9,  # Базовый опыт за победу
-    "exp_lose": 0.475,  # Опыт за проигрыш
-    "exp_factor": 0.35  # Множитель
+    "exp_lose": 0.2,  # Опыт за проигрыш
 
 }
 
@@ -198,9 +197,11 @@ EXP_CASE = {
 DEPOSITS = {
     "deposit_1": (100_000, 1.20, 6),
     "deposit_2": (1_000_000, 1.30, 12),
-    "deposit_3": (10_000_000, 1.40, 24),
-    "deposit_4": (100_000_000, 1.50, 48),
-    "deposit_5": (1_000_000_000, 1.60, 96),
+    "deposit_3": (10_000_000, 1.40, 18),
+    "deposit_4": (100_000_000, 1.50, 24),
+    "deposit_5": (1_000_000_000, 1.60, 30),
+    "deposit_6": (10_000_000_000, 1.70, 36),
+    "deposit_7": (100_000_000_000, 1.80, 42),
 }
 
 # ======================= КРАЖА =======================

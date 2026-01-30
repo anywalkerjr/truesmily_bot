@@ -291,16 +291,6 @@ async def check_all_incomes(context: ContextTypes.DEFAULT_TYPE):
         )
         conn.commit()
 
-        # Уведомление
-        try:
-            await context.bot.send_message(
-                chat_id=user_id,
-                text=f"<blockquote>💵 Начислен пассивный доход: {spaced_num(income)} $miles</blockquote>",
-                parse_mode="HTML"
-            )
-        except Exception as e:
-            print(f"Failed to notify user {user_id}: {e}")
-
 
 # ======================= ЭКСПОРТ =======================
 

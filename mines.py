@@ -263,7 +263,7 @@ async def handle_mines_action(update: Update, context: ContextTypes.DEFAULT_TYPE
         if field[idx] == 0:
             steps = len(open_cells)
             multiplier = count_multiplier(steps, field.count(0))
-            exp_gained = calculate_exp_reward(multiplier, bet, user_id, "lose")
+            exp_gained = calculate_exp_reward(steps, bet, user_id, "lose")
             update_experience(user_id, exp_gained)
 
             cashback, bonus_text = apply_luck_cashback(user_id, username, bet)
@@ -386,8 +386,7 @@ def calculate_exp_reward(result: float, bet: int, user_id: int, state: str) -> f
 
     # Множитель от ставки
     exp_mult = calculate_exp_multiplier(bet, mastery_bonus, business_bonus)
-
-    return round(result * exp_mult * MINES['exp_factor'] * MINES[f'exp_{state}'], 1)
+    return round(result * exp_mult * MINES[f'exp_{state}'], 1)
 
 
 def apply_luck_cashback(user_id: int, username: str, bet: int) -> Tuple[int, str]:

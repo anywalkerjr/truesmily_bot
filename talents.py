@@ -140,6 +140,31 @@ def get_talent_data(user_lvl: int, talent_name: str, current_talent_lvl: int, us
     }
 
 
+def get_max_upgrade_possible(user_lvl: int, talent_name: str, current_talent_lvl: int, user_balance: int) -> int:
+    """
+    Вычисляет, на сколько уровней можно прокачать талант прямо сейчас.
+    """
+    max_lvl_limit = TALENT_MAX_LEVELS[talent_name]
+    upgrades_possible = 0
+    temp_balance = user_balance
+    temp_talent_lvl = current_talent_lvl
+
+    # Цикл идет до тех пор, пока уровень таланта меньше максимального
+    while temp_talent_lvl < max_lvl_limit:
+        # Получаем требования для СЛЕДУЮЩЕГО уровня
+        price = get_upgrade_cost(talent_name, temp_talent_lvl)
+        req_lvl = get_required_level(talent_name, temp_talent_lvl)
+
+        # Проверяем, хватает ли уровня игрока и денег
+        if user_lvl >= req_lvl and temp_balance >= price:
+            upgrades_possible += 1
+            temp_balance -= price
+            temp_talent_lvl += 1
+        else:
+            # Если на очередной уровень не хватает ресурсов, останавливаемся
+            break
+
+    return upgrades_possible
 # ======================= КОМАНДЫ =======================
 
 async def talents(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -254,6 +279,7 @@ async def talent_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else f"❌ Требуется {data['next_req_lvl']} LVL (у вас {user_lvl} LVL) и {spaced_num(data['next_price'])} $miles (у вас {spaced_num(user_balance)} $miles)"
         )
 
+
         text = (
             f"━ {data['emoji']} {data['title']} ━\n\n"
             f"⭐️ Текущий уровень: {data['lvl']} / {data['max_lvl']}\n"
@@ -263,11 +289,19 @@ async def talent_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"✨ Новый эффект: {data['next_effect']}\n"
             f"🔒 Доступность: {availability}"
         )
+        max_upgrade = get_max_upgrade_possible(user_lvl, talent_name, current_lvl, user_balance)
+        if max_upgrade > 1:
+            keyboard = [
+                [InlineKeyboardButton("⬆️ Улучшить", callback_data=f"upgrade_{talent_name}:{user.id}")],
+                [InlineKeyboardButton(f"⬆️ Улучшить на {max_upgrade}", callback_data=f"upgrade_{talent_name}:{user.id}:{max_upgrade}")],
+                [InlineKeyboardButton("⬅️ Назад", callback_data=f"talents:{user.id}")]
+            ]
+        else:
+            keyboard = [
+                [InlineKeyboardButton("⬆️ Улучшить", callback_data=f"upgrade_{talent_name}:{user.id}")],
+                [InlineKeyboardButton("⬅️ Назад", callback_data=f"talents:{user.id}")]
+            ]
 
-        keyboard = [
-            [InlineKeyboardButton("⬆️ Улучшить", callback_data=f"upgrade_{talent_name}:{user.id}")],
-            [InlineKeyboardButton("⬅️ Назад", callback_data=f"talents:{user.id}")]
-        ]
 
     try:
         await query.edit_message_text(
@@ -285,13 +319,14 @@ async def talent_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def upgrade_talent(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Прокачать талант на следующий уровень"""
+    """Прокачать талант на один или несколько уровней"""
     query = update.callback_query
     user_id = query.from_user.id
     username = query.from_user.username
 
-    # Проверка владельца
-    owner_id = query.data.split(':')[1]
+    # 1. Проверка владельца
+    query_parts = query.data.split(':')
+    owner_id = query_parts[1]
     if str(owner_id) != str(user_id):
         await query.answer(text="⚠️ Это не твоя сессия!", show_alert=True)
         return
@@ -299,62 +334,80 @@ async def upgrade_talent(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ensure_user_exists(query.from_user)
     ensure_talent_exists(user_id)
 
-    # Парсим название таланта
-    talent_name = query.data.split(':')[0].split("_")[1]
+    # 2. Парсим данные
+    talent_name = query_parts[0].split("_")[1]
+    # Если в callback_data передано 'max', качаем сколько влезет, иначе на 1
+    upgrade_mode = query_parts[2] if len(query_parts) == 3 else "1"
 
-    # Получаем текущие данные
+    # 3. Получаем текущие данные
     talent_levels = get_user_talents(user_id)
     current_lvl = talent_levels[talent_name]
     user_lvl = get_experience(user_id, username)[0]
     balance = get_balance(user_id, username)
+    max_lvl_limit = TALENT_MAX_LEVELS[talent_name]
 
-    # Проверка максимального уровня
-    max_lvl = TALENT_MAX_LEVELS[talent_name]
-    if current_lvl >= max_lvl:
-        await query.answer("⚠️ Этот талант уже прокачан до максимума.", show_alert=True)
+    if current_lvl >= max_lvl_limit:
+        await query.answer("⚠️ Максимальный уровень уже достигнут.", show_alert=True)
         return
 
-    # Получаем данные для прокачки
-    data = get_talent_data(user_lvl, talent_name, current_lvl, balance)
+    # 4. РАСЧЕТ ПРОКАЧКИ
+    total_cost = 0
+    levels_to_add = 0
+    temp_lvl = current_lvl
+    temp_balance = balance
 
-    # Проверка требований по уровню
-    if not data['available']:
-        await query.answer(
-            f"🔒 Недостаточно уровня. Требуется: {data['next_req_lvl']} LVL.",
-            show_alert=True
-        )
+    # Определяем лимит итераций (для режима 'max' ставим разницу до капа)
+    limit = (max_lvl_limit - current_lvl) if upgrade_mode == "max" else int(upgrade_mode)
+
+    for _ in range(limit):
+        price = get_upgrade_cost(talent_name, temp_lvl)
+        req_lvl = get_required_level(talent_name, temp_lvl)
+
+        if user_lvl >= req_lvl and temp_balance >= price:
+            temp_balance -= price
+            total_cost += price
+            temp_lvl += 1
+            levels_to_add += 1
+        else:
+            break
+
+    # 5. Если не удалось прокачать даже на 1 уровень
+    if levels_to_add == 0:
+        price_first = get_upgrade_cost(talent_name, current_lvl)
+        req_lvl_first = get_required_level(talent_name, current_lvl)
+
+        if user_lvl < req_lvl_first:
+            msg = f"🔒 Требуется {req_lvl_first} LVL"
+        else:
+            msg = f"💸 Нужно {spaced_num(price_first)} $miles"
+        await query.answer(msg, show_alert=True)
         return
 
-    # Проверка баланса
-    if balance < data['next_price']:
-        await query.answer(
-            f"💸 Недостаточно средств. Стоимость: {spaced_num(data['next_price'])} $miles",
-            show_alert=True
-        )
-        return
-
-    # Прокачиваем талант
+    # 6. СОХРАНЕНИЕ В БД (Один раз за всю операцию)
     c = get_cursor()
     cursor, conn = c[0], c[1]
 
-    new_balance = balance - data['next_price']
-    set_balance(user_id, new_balance)
+    new_balance = balance - total_cost
+    set_balance(user_id, new_balance)  # Обновляем баланс
 
+    # Обновляем уровень таланта в БД
     cursor.execute(
-        f"UPDATE talents SET {talent_name} = {talent_name} + 1 WHERE user_id = %s",
-        (user_id,)
+        f"UPDATE talents SET {talent_name} = {talent_name} + %s WHERE user_id = %s",
+        (levels_to_add, user_id)
     )
     conn.commit()
 
-    await query.answer()
+    await query.answer(f"Прокачано на +{levels_to_add} ур.!")
 
-    # Формируем сообщение об успехе
-    new_lvl = current_lvl + 1
+    # 7. ФОРМИРОВАНИЕ ОТВЕТА
+    new_lvl = current_lvl + levels_to_add
     text = (
         f"✅ *Талант улучшен!*\n\n"
-        f"{data['emoji']} *{data['title']}* → {new_lvl} LVL\n"
-        f"✨ Новый эффект: {get_talent_effect_description(talent_name, new_lvl)}\n\n"
-        f"💰 Баланс: {spaced_num(new_balance)} $miles"
+        f"{TALENT_EMOJI[talent_name]} *{TALENT_NAMES[talent_name]}* → {new_lvl} LVL\n"
+        f"⏫ Повышено уровней: {levels_to_add}\n"
+        f"✨ Эффект: {get_talent_effect_description(talent_name, new_lvl)}\n\n"
+        f"💰 Списано: {spaced_num(total_cost)} $miles\n"
+        f"💳 Баланс: {spaced_num(new_balance)} $miles"
     )
 
     keyboard = [[

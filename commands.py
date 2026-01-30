@@ -260,25 +260,29 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         count = len(profile['businesses_ids'])
         if count == 1:
-            biz_text = f"📍 У вас {count} бизнес:\n"
+            biz_text = f"<blockquote>📍 У вас {count} бизнес:</blockquote>\n"
         elif 1 < count < 5:
-            biz_text = f"📍 У вас {count} бизнеса:\n"
+            biz_text = f"<blockquote>📍 У вас {count} бизнеса:</blockquote>\n"
         else:
-            biz_text = f"📍 У вас {count} бизнесов:\n"
+            biz_text = f"<blockquote>📍 У вас {count} бизнесов:</blockquote>\n"
 
         passive_income = calculate_total_income(user.id)
+        for biz in BUSINESS_LIST:
+            if biz["id"] in profile['businesses_ids']:
+                biz_text += f"\t{biz['emoji']} {biz['name']}\n"
 
         biz_text += f"\n🤑 Пассивный доход: {spaced_num(passive_income)} $miles/час"
 
     next_level_xp = player_level[2]
 
     await safe_reply_text(update.message,
-                          f"👤 *{user.first_name}*\n\n"
+                          f"<blockquote>👤 {user.first_name}</blockquote>\n\n"
+                          f"<blockquote>📊 Статистика</blockquote>\n"
                           f"💰 Баланс: {spaced_num(bal)} $miles\n"
                           f"⭐️ Уровень: {current_level} ({current_xp}/{next_level_xp})\n\n"
-                          f"*Таланты:*\n{text_talents}\n\n"
+                          f"<blockquote>Таланты:</blockquote>\n{text_talents}\n\n"
                           f"{biz_text}",
-                          parse_mode="Markdown"
+                          parse_mode="HTML"
                           )
 
 
@@ -328,29 +332,29 @@ async def check(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         count = len(profile['businesses_ids'])
         if count == 1:
-            biz_text = f"📍 У игрока {count} бизнес:\n"
+            biz_text = f"<blockquote>📍 У игрока {count} бизнес:</blockquote>\n"
         elif 1 < count < 5:
-            biz_text = f"📍 У игрока {count} бизнеса:\n"
+            biz_text = f"<blockquote>📍 У игрока {count} бизнеса:</blockquote>\n"
         else:
-            biz_text = f"📍 У игрока {count} бизнесов:\n"
+            biz_text = f"<blockquote>📍 У игрока {count} бизнесов:</blockquote>\n"
 
-        passive_income = 0
-        for biz_id in profile['businesses_ids']:
-            biz = BUSINESS_LIST[biz_id - 1]
-            biz_text += f"  🏬 {biz['name']}\n"
-            passive_income += biz['income']
+        passive_income = calculate_total_income(target.id)
+        for biz in BUSINESS_LIST:
+            if biz["id"] in profile['businesses_ids']:
+                biz_text += f"\t{biz['emoji']} {biz['name']}\n"
 
         biz_text += f"\n🤑 Пассивный доход: {spaced_num(passive_income)} $miles/час"
 
     next_level_xp = player_level[2]
 
     await safe_reply_text(update.message,
-                          f"👤 *{target.first_name}*\n\n"
+                          f"<blockquote>👤 {target.first_name}</blockquote>\n\n"
+                          f"<blockquote>📊 Статистика</blockquote>\n"
                           f"💰 Баланс: {spaced_num(bal)} $miles\n"
                           f"⭐️ Уровень: {current_level} ({current_xp}/{next_level_xp})\n\n"
-                          f"*Таланты:*\n{text_talents}\n\n"
+                          f"<blockquote>Таланты:</blockquote>\n{text_talents}\n\n"
                           f"{biz_text}",
-                          parse_mode="Markdown"
+                          parse_mode="HTML"
                           )
 
 
@@ -516,10 +520,9 @@ def generate_spin_image(reel: list, state: str) -> io.BytesIO:
     for img in images:
         result.paste(img, (x_offset, 297), img)
         x_offset += 365
-    result = result.convert('RGB')
     bio = io.BytesIO()
-    bio.name = f'temp_spin_{random.randint(1000000, 9999999)}.jpeg'
-    result.save(bio, 'JPEG', quality=60)
+    bio.name = 'temp_spin.jpeg'
+    result.save(bio, 'JPEG', quality=50, optimize=False)
     bio.seek(0)
     return bio
 
@@ -919,7 +922,9 @@ async def deposit(update: Update, context: ContextTypes.DEFAULT_TYPE):
         InlineKeyboardButton("2️⃣", callback_data=f"deposit_deposit_2:{user_id}"),
         InlineKeyboardButton("3️⃣", callback_data=f"deposit_deposit_3:{user_id}"),
         InlineKeyboardButton("4️⃣", callback_data=f"deposit_deposit_4:{user_id}"),
-        InlineKeyboardButton("5️⃣", callback_data=f"deposit_deposit_5:{user_id}")
+        InlineKeyboardButton("5️⃣", callback_data=f"deposit_deposit_5:{user_id}"),
+        InlineKeyboardButton("6️⃣", callback_data=f"deposit_deposit_6:{user_id}"),
+        InlineKeyboardButton("7️⃣", callback_data=f"deposit_deposit_7:{user_id}"),
     ]]
 
     await safe_reply_text(update.message,
@@ -927,9 +932,11 @@ async def deposit(update: Update, context: ContextTypes.DEFAULT_TYPE):
                           "Заложи часть баланса и получи гарантированный доход без риска.\n\n"
                           "1️⃣ $100 000 — 6 часов, *+20%*\n"
                           "2️⃣ $1 000 000 — 12 часов, *+30%*\n"
-                          "3️⃣ $10 000 000 — 24 часа, *+40%*\n"
-                          "4️⃣ $100 000 000 — 48 часов, *+50%*\n"
-                          "5️⃣ $1 000 000 000 — 96 часов, *+60%*\n\n"
+                          "3️⃣ $10 000 000 — 18 часа, *+40%*\n"
+                          "4️⃣ $100 000 000 — 24 часов, *+50%*\n"
+                          "5️⃣ $1 000 000 000 — 30 часов, *+60%*\n"
+                          "5️⃣ $10 000 000 000 — 36 часов, *+70%*\n"
+                          "5️⃣ $100 000 000 000 — 42 часов, *+80%*\n\n"
                           "Выбери номер вклада ниже 👇",
                           reply_markup=InlineKeyboardMarkup(keyboard),
                           parse_mode="Markdown"
@@ -1070,11 +1077,6 @@ async def promo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Выдача наград
     award_text = activate_promocode(user_id, promocode)
-    await update.message.reply_text(
-        award_text,
-        parse_mode="Markdown"
-    )
-
     await update.message.reply_text(
         award_text,
         parse_mode="Markdown"
