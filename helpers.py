@@ -779,7 +779,8 @@ def activate_promocode(user_id: int, promocode: str) -> str:
     if award.get("business"):
         for biz_id in award["business"]:
             has_business = add_user_business(user_id, biz_id)
-            msg += f"• {BUSINESS_LIST[biz_id]['emoji']} {BUSINESS_LIST[biz_id]['name']}"
+            biz = [b for b in BUSINESS_LIST if b[id] == biz_id][0]
+            msg += f"• {biz['emoji']} {biz['name']}"
             msg += " (уже есть)\n" if not has_business else "\n"
 
     if award.get("experience"):
