@@ -386,7 +386,8 @@ def calculate_exp_reward(result: float, bet: int, user_id: int, state: str) -> f
 
     # Множитель от ставки
     exp_mult = calculate_exp_multiplier(bet, mastery_bonus, business_bonus)
-    return round(result * exp_mult * MINES[f'exp_{state}'], 1)
+    exp = min(5000, result * exp_mult * MINES[f'exp_{state}'])
+    return round(exp, 1)
 
 
 def apply_luck_cashback(user_id: int, username: str, bet: int) -> Tuple[int, str]:

@@ -173,13 +173,14 @@ def get_experience(user_id: int, username: Optional[str] = None) -> Tuple[int, f
         result = cursor.fetchone()
 
         if result:
-            true_lvl = next((lvl for lvl, xp in LEVELS if xp >= float(result['experience'])), float("inf")) - 1
-            if int(result['level']) != true_lvl:
+            true_lvl = next((lvl for lvl, xp in LEVELS if xp >= float(result['experience'])), 101)
+            next_lvl_index = min(true_lvl, 99)
+            if int(result['level']) + 1 != true_lvl:
                 cursor.execute("UPDATE users SET level = %s WHERE telegram_id = %s", (true_lvl, user_id,))
                 conn.commit()
-                return true_lvl, float(result['experience']), LEVELS[true_lvl+1][1]
+                return true_lvl, float(result['experience']), LEVELS[next_lvl_index][1]
 
-            return int(result['level']), float(result['experience']), LEVELS[true_lvl+1][1]
+            return int(result['level']), float(result['experience']), LEVELS[next_lvl_index][1]
         else:
             # Создаём пользователя если нет
             get_balance(user_id, username)
