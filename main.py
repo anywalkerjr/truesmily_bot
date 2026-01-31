@@ -13,6 +13,7 @@ from main_duels import duel, my_duels
 from duel_handlers import handle_game_selection, handle_round_selection, decline_duel
 from duel_turn_logic import handle_duel_turn
 from mines import mines, handle_mines_action
+from tower import tower, handle_tower_action
 
 # Импорт команд (создадим отдельный файл)
 from commands import (
@@ -190,12 +191,15 @@ def build_bot(token: str):
     ))
 
     app.add_handler(CommandHandler("mines", mines))
-    app.add_handler(
-        CallbackQueryHandler(
-            handle_mines_action,
-            pattern=r"^(mine:\d+:\d+|cashout:\d+|opened)$"
-        )
-    )
+    app.add_handler(CallbackQueryHandler(
+        handle_mines_action,
+        pattern=r"^(mine:|mine_cashout:|mine_opened)"
+    ))
+    app.add_handler(CommandHandler("tower", tower))
+    app.add_handler(CallbackQueryHandler(
+        handle_tower_action,  # Лучше сделать отдельную функцию
+        pattern=r"^(tower:|tower_cashout:|tower_opened)"
+    ))
 
     # Рулетка
     app.add_handler(CommandHandler("rt", roulette))

@@ -99,9 +99,16 @@ BLACKJACK = {
     }
 }
 
-# ======================= МИНЫ =======================
+# ======================= МИНЫ | ТАВЕР =======================
 
 MINES = {
+    # Опыт за игру
+    "exp_win": 0.9,  # Базовый опыт за победу
+    "exp_lose": 0.2,  # Опыт за проигрыш
+
+}
+
+TOWER = {
     # Опыт за игру
     "exp_win": 0.9,  # Базовый опыт за победу
     "exp_lose": 0.2,  # Опыт за проигрыш
@@ -514,7 +521,7 @@ __all__ = [
     'GROUP_GAME_DURATION', 'BETTING_DEADLINE_OFFSET',
 
     # Игры
-    'BLACKJACK', 'ROULETTE', 'SLOTS', 'LUCKY_WHEEL', 'DUELS', 'MINES',
+    'BLACKJACK', 'ROULETTE', 'SLOTS', 'LUCKY_WHEEL', 'DUELS', 'MINES', 'TOWER',
 
     # Экономика
     'DEPOSITS', 'STEAL', 'HACK', 'BUSINESS_LIST',

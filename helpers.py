@@ -214,7 +214,8 @@ def update_experience(user_id: int, amount: float) -> Dict[str, Any]:
                 leveled_up = True
             else:
                 break
-
+        new_exp = min(new_exp, 175338)
+        current_level = min(current_level, 100)
         cursor.execute(
             "UPDATE users SET experience = %s, level = %s WHERE telegram_id = %s",
             (new_exp, current_level, user_id)
@@ -376,6 +377,38 @@ def delete_mines_session(user_id: int) -> None:
         cursor.execute("DELETE FROM mines_sessions WHERE telegram_id = %s", (user_id,))
         conn.commit()
 
+# ======================= TOWER =======================
+
+def create_tower_session(user_id: int, bet: int, field: list, open_cells: list) -> None:
+    """Создание сессии тавера (безопасно с JSON)"""
+    with get_db_connection() as (cursor, conn):
+        cursor.execute(
+            "REPLACE INTO tower_sessions (telegram_id, bet, field, open_cells) VALUES (%s, %s, %s, %s)",
+            (user_id, bet, json.dumps(field), json.dumps(open_cells))
+        )
+        conn.commit()
+
+
+def get_tower_session(user_id: int) -> Optional[Dict]:
+    """Получение сессии тавера"""
+    with get_db_connection() as (cursor, conn):
+        cursor.execute("SELECT * FROM tower_sessions WHERE telegram_id = %s", (user_id,))
+        result = cursor.fetchone()
+
+        if result:
+            return {
+                "bet": result["bet"],
+                "field": json.loads(result["field"]),
+                "open_cells": json.loads(result["open_cells"])
+            }
+        return None
+
+
+def delete_tower_session(user_id: int) -> None:
+    """Удаление сессии тавера"""
+    with get_db_connection() as (cursor, conn):
+        cursor.execute("DELETE FROM tower_sessions WHERE telegram_id = %s", (user_id,))
+        conn.commit()
 
 # ======================= ПОЛЬЗОВАТЕЛИ =======================
 
