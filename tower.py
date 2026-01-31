@@ -21,7 +21,7 @@ def build_tower_keyboard(user_id: int, field: list, open_cells: list, game_over:
             text = "❓"
             callback = f"tower:{row}:{col}:{user_id}"
             try:
-                if row > len(open_cells):
+                if row+1 > len(open_cells):
                     if col == open_cells[row]:
                         if field[row][col] == 0:
                             text = "💀"
