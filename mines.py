@@ -27,12 +27,12 @@ def build_mines_keyboard(user_id: int, field: list, open_cells: list, game_over:
                 else:
                     text = "✅"
 
-                callback = "opened"
+                callback = "mine_opened"
 
             else:
                 if game_over and field[idx] == 0:
                     text = "💣"
-                    callback = "opened"
+                    callback = "mine_opened"
                 else:
                     text = "❓"
                     callback = f"mine:{idx}:{user_id}"
@@ -46,7 +46,7 @@ def build_mines_keyboard(user_id: int, field: list, open_cells: list, game_over:
     # Кнопка забрать
     if not game_over and len(open_cells) > 0:
         keyboard.append([
-            InlineKeyboardButton("💰 Забрать", callback_data=f"cashout:{user_id}")
+            InlineKeyboardButton("💰 Забрать", callback_data=f"mine_cashout:{user_id}")
         ])
 
     return InlineKeyboardMarkup(keyboard)
