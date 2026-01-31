@@ -19,7 +19,7 @@ from tower import tower, handle_tower_action
 from commands import (
     start, help_command, help_callback, stats, top, top_lvl,
     check, give, ref, spin, lucky_wheel, exp_case, hack, steal,
-    deposit, deposit_choice, claim_deposit, check_all_deposits, promo
+    deposit, deposit_choice, claim_deposit, check_all_deposits, promo, handle_text
 )
 from admin import (
     admin_panel, admin_give_money, admin_set_level,
@@ -260,6 +260,11 @@ def build_bot(token: str):
         deposit_choice,
         pattern=r"^deposit_deposit_\d+:"
     ))
+    app.add_handler(CallbackQueryHandler(
+        deposit,
+        pattern=r"^deposit"
+    ))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
 
     # ===== ДЕЙСТВИЯ =====
 
@@ -287,10 +292,10 @@ def build_bot(token: str):
 
     # ===== ОБРАБОТЧИК ТЕКСТОВЫХ КНОПОК =====
 
-    app.add_handler(MessageHandler(
-        filters.TEXT & ~filters.COMMAND,
-        text_handler
-    ))
+    # app.add_handler(MessageHandler(
+    #     filters.TEXT & ~filters.COMMAND,
+    #     text_handler
+    # ))
 
     return app
 

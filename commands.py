@@ -2,16 +2,17 @@ import json
 import random
 import asyncio
 import os
+from bdb import effective
 from math import floor
 from datetime import datetime
 import io
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ForceReply
 from telegram.ext import ContextTypes
 from PIL import Image
 from constants import (
     SLOTS, LUCKY_WHEEL, MIN_BET, LEVELS,
     DEPOSITS, STEAL, HACK,
-    LUCKY_WHEEL_COOLDOWN, STEAL_COOLDOWN, BUSINESS_LIST, REF_SYSTEM, EXP_CASE_COOLDOWN, EXP_CASE
+    LUCKY_WHEEL_COOLDOWN, STEAL_COOLDOWN, BUSINESS_LIST, REF_SYSTEM, EXP_CASE_COOLDOWN, EXP_CASE, MAX_DEPOSIT
 )
 from helpers import (
     get_balance, set_balance, spaced_num, cropped_num,
@@ -896,8 +897,15 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def deposit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Команда /deposit - сделать вклад"""
-    user_id = update.message.from_user.id
-
+    query = update.callback_query
+    if not query:
+        user_id = update.message.from_user.id
+    else:
+        user_id = query.from_user.id
+        msg = context.user_data["choosing_deposit_msg"]
+        await context.bot.delete_message(
+            chat_id=update.effective_chat.id,
+            message_id=msg.id)
     # Проверка активного вклада
     check = check_deposit_ready(user_id)
 
@@ -923,30 +931,40 @@ async def deposit(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     # Кнопки выбора вклада
-    keyboard = [[
-        InlineKeyboardButton("1️⃣", callback_data=f"deposit_deposit_1:{user_id}"),
-        InlineKeyboardButton("2️⃣", callback_data=f"deposit_deposit_2:{user_id}"),
-        InlineKeyboardButton("3️⃣", callback_data=f"deposit_deposit_3:{user_id}"),
-        InlineKeyboardButton("4️⃣", callback_data=f"deposit_deposit_4:{user_id}"),
-        InlineKeyboardButton("5️⃣", callback_data=f"deposit_deposit_5:{user_id}"),
-        InlineKeyboardButton("6️⃣", callback_data=f"deposit_deposit_6:{user_id}"),
-        InlineKeyboardButton("7️⃣", callback_data=f"deposit_deposit_7:{user_id}"),
-    ]]
+    keyboard = []
+    base = "️⃣ "
+    text = ""
+    for d in range(len(DEPOSITS)):
+        text += f"{d+1}{base} " + str(DEPOSITS[f"deposit_{d}"][1]) + " часов — *" + str(int(DEPOSITS[f"deposit_{d}"][0]*100 - 100)) + "%*\n"
+    for d in range(0, len(DEPOSITS), 2):
+        row = [InlineKeyboardButton(
+            f"{d + 1}{base}", callback_data=f"deposit_deposit_{d}:{user_id}"
+        )]
+        if d + 1 < len(DEPOSITS):
+            row.append(InlineKeyboardButton(
+                f"{d + 2}{base}", callback_data=f"deposit_deposit_{d + 1}:{user_id}"
+            ))
 
-    await safe_reply_text(update.message,
-                          "🏦 *Банковские вклады*\n"
-                          "Заложи часть баланса и получи гарантированный доход без риска.\n\n"
-                          "1️⃣ $100 000 — 6 часов, *+20%*\n"
-                          "2️⃣ $1 000 000 — 12 часов, *+30%*\n"
-                          "3️⃣ $10 000 000 — 18 часа, *+40%*\n"
-                          "4️⃣ $100 000 000 — 24 часов, *+50%*\n"
-                          "5️⃣ $1 000 000 000 — 30 часов, *+60%*\n"
-                          "5️⃣ $10 000 000 000 — 36 часов, *+70%*\n"
-                          "5️⃣ $100 000 000 000 — 42 часов, *+80%*\n\n"
-                          "Выбери номер вклада ниже 👇",
-                          reply_markup=InlineKeyboardMarkup(keyboard),
-                          parse_mode="Markdown"
-                          )
+        keyboard.append(row)
+
+    if not query:
+        await safe_reply_text(update.message,
+                              "🏦 *Банковские вклады*\n"
+                              "Заложи часть баланса и получи гарантированный доход без риска.\n\n"
+                              f'{text}'
+                              "Выбери номер вклада ниже 👇",
+                              reply_markup=InlineKeyboardMarkup(keyboard),
+                              parse_mode="Markdown"
+                              )
+    else:
+        await query.edit_message_text(
+                              "🏦 *Банковские вклады*\n"
+                              "Заложи часть баланса и получи гарантированный доход без риска.\n\n"
+                              f'{text}'
+                              "Выбери номер вклада ниже 👇",
+                              reply_markup=InlineKeyboardMarkup(keyboard),
+                              parse_mode="Markdown"
+                              )
 
 
 async def deposit_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -955,36 +973,81 @@ async def deposit_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = query.from_user
     # Парсинг данных
     key, owner_id = query.data.split(':')
-
+    key_clean = key.replace("deposit_", "", 1)
     if str(owner_id) != str(user.id):
         await query.answer("⚠️ Это не твоя сессия!", show_alert=True)
         return
-
-    await query.answer()
-
-    # Получаем параметры вклада
-    amount, multiplier, hours = DEPOSIT_OPTIONS[key.replace("deposit_", "", 1)]
-
-    user_bal = get_balance(user.id, user.username)
-
-    if user_bal < amount:
-        await query.edit_message_text("❌ Недостаточно средств.")
-        return
-
-    # Создаём вклад
-    new_balance = user_bal - amount
-    bank_balance = int(amount * multiplier)
-
-    set_balance(user.id, new_balance)
-    update_bank_balance(user.id, bank_balance, hours)
-
-    hours_text = f"{hours} часа" if hours == 3 else f"{hours} часов"
-
+    context.user_data['choosing_deposit'] = key_clean
+    multiplier, hours = DEPOSIT_OPTIONS[key_clean]
+    user_balance = get_balance(user.id)
     await query.edit_message_text(
-        f"✅ Отлично! Ожидай {hours_text}...\n"
-        f"💵 Выплата: {spaced_num(bank_balance)} $miles",
-        parse_mode="Markdown"
+        f"<b>🏦 ДЕПОЗИТ НА {hours} ч. ПОД {int(multiplier * 100 - 100)}%</b>\n\n"
+        f"<i>💰 Ваш баланс сейчас: {spaced_num(user_balance)} $miles</i>\n\n"
+        f"<blockquote>ℹ️ Лимит банка {spaced_num(MAX_DEPOSIT)} $miles</blockquote>",
+        reply_markup=InlineKeyboardMarkup([[
+            InlineKeyboardButton("⬅️ Назад", callback_data="deposit")
+        ]]),
+        parse_mode="HTML"
     )
+    msg = await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=f"✍️ {user.first_name}, введи сумму вклада ответом:",
+        reply_markup=ForceReply(selective=True)
+    )
+    context.user_data["choosing_deposit_msg"] = msg
+
+async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if "choosing_deposit" in context.user_data:
+        user_id = update.effective_user.id
+        user_balance = get_balance(user_id)
+        amount = parse_bet_amount(update.message.text, update.effective_user.id)
+        key = context.user_data['choosing_deposit']
+        multiplier, hours = DEPOSIT_OPTIONS[key]
+        if not amount or amount <= 0:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f"⚠️ <b>Пожалуйста, введи корректную сумму (например, 1000 или 1к):</b>",
+                parse_mode="HTML",
+                reply_markup=ForceReply(selective=True),
+                reply_to_message_id=update.message.message_id
+            )
+            return
+        elif amount > MAX_DEPOSIT:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f"⚠️ <b>Сумма больше лимита. Введи сумму до {spaced_num(MAX_DEPOSIT)} $miles</b>",
+                parse_mode="HTML",
+                reply_markup=ForceReply(selective=True),
+                reply_to_message_id=update.message.message_id
+            )
+            return
+        elif amount > user_balance:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f"⚠️ <b>Не хватает средств на счету. Введи сумму до {spaced_num(user_balance)} $miles</b>",
+                parse_mode="HTML",
+                reply_markup=ForceReply(selective=True),
+                reply_to_message_id=update.message.message_id
+            )
+            return
+        new_balance = user_balance - amount
+        bank_balance = int(amount * multiplier)
+
+        set_balance(user_id, new_balance)
+        update_bank_balance(user_id, bank_balance, hours)
+
+        context.user_data.pop("choosing_deposit")
+        msg = context.user_data["choosing_deposit_msg"]
+        msg.delete()
+        context.user_data.pop("choosing_deposit_msg")
+
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="✅ Отлично! Ожидай {hours}...\n"
+            f"💵 Выплата: {spaced_num(bank_balance)} $miles",
+            parse_mode="Markdown",
+            reply_to_message_id=update.message.message_id
+        )
 
 
 async def claim_deposit(update: Update, context: ContextTypes.DEFAULT_TYPE):

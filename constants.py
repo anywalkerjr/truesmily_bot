@@ -200,15 +200,15 @@ EXP_CASE = {
 }
 
 # ======================= ВКЛАДЫ =======================
-
+MAX_DEPOSIT = 10**10
 DEPOSITS = {
-    "deposit_1": (100_000, 1.20, 6),
-    "deposit_2": (1_000_000, 1.30, 12),
-    "deposit_3": (10_000_000, 1.40, 18),
-    "deposit_4": (100_000_000, 1.50, 24),
-    "deposit_5": (1_000_000_000, 1.60, 30),
-    "deposit_6": (10_000_000_000, 1.70, 36),
-    "deposit_7": (100_000_000_000, 1.80, 42),
+    "deposit_0": (1.03, 6),
+    "deposit_1": (1.07, 12),
+    "deposit_2": (1.10, 18),
+    "deposit_3": (1.14, 24),
+    "deposit_4": (1.19, 30),
+    "deposit_5": (1.25, 36),
+    "deposit_6": (1.32, 42),
 }
 
 # ======================= КРАЖА =======================
@@ -483,7 +483,7 @@ BUSINESS_LIST = [
         "income": 2_250_000,
         "lvl": 19,
         "mastery": 28,
-        "bonus": "+10% к сумме выигрыша всех игр (кроме /duel, /lucky\_wheel, /exp\_case)",
+        "bonus": "+10% к сумме выигрыша всех игр (кроме /duel, /lucky\\_wheel, /exp\\_case)",
         "user_bonus": {"win_multiplier": 0.1}
     },
 
@@ -524,7 +524,7 @@ __all__ = [
     'BLACKJACK', 'ROULETTE', 'SLOTS', 'LUCKY_WHEEL', 'DUELS', 'MINES', 'TOWER',
 
     # Экономика
-    'DEPOSITS', 'STEAL', 'HACK', 'BUSINESS_LIST',
+    'DEPOSITS', 'STEAL', 'HACK', 'BUSINESS_LIST', 'MAX_DEPOSIT',
 
     # UI
     'MESSAGES', 'EMOJI',

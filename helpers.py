@@ -110,7 +110,6 @@ def parse_bet_amount(amount_str: str, user_id: int, username: Optional[str] = No
     except ValueError:
         return None
 
-
 def calculate_exp_multiplier(bet_amount: int, mastery_bonus: float = 0, business_bonus: float = 0) -> float:
     """Расчёт множителя опыта на основе ставки и бонусов"""
     base_mult = 1
