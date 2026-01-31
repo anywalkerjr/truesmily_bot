@@ -15,37 +15,37 @@ from helpers import get_user_business_bonuses
 def build_tower_keyboard(user_id: int, field: list, open_cells: list, game_over: bool = False):
     keyboard = []
 
-    for row in reversed(range(5)):
+    for row in reversed(range(8)):
         row_buttons = []
         for col in range(5):
             text = "❓"
             callback = f"tower:{row}:{col}:{user_id}"
-            try:
-                if row+1 > len(open_cells):
-                    if col == open_cells[row]:
-                        if field[row][col] == 0:
-                            text = "💀"
-                        else:
-                            text = "💎"
-                        callback = "tower_opened"
-
-                    else:
-                        if game_over and field[row][col] == 0:
-                            text = "🚫"
-                            callback = "tower_opened"
+            if len(open_cells) > row:
+                if col == open_cells[row]:
+                    text = "✅" if field[row][col] == 1 else "🚫"
                 else:
-                    if field[row][col] == 0:
-                        text = "💀"
-                    else:
-                        text = "💎"
+                    text = "💎" if field[row][col] == 1 else "💀"
+                callback = "tower_opened"
+            else:
+                if game_over:
+                    text = "💎" if field[row][col] == 1 else "💀"
                     callback = "tower_opened"
-            except IndexError:
-                pass
 
-            row_buttons.append(
-                InlineKeyboardButton(text, callback_data=callback)
-            )
+            # if row < len(open_cells) or game_over:
+            #     if len(open_cells) > 0 and not game_over:
+            #         if col == open_cells[row]:
+            #             text = "✅" if field[row][col] == 1 else "🚫"
+            #         else:
+            #             text = "💎" if field[row][col] == 1 else "💀"
+            #     else:
+            #         text = "💎" if field[row][col] == 1 else "💀"
+            #     callback = "tower_opened"
+            #
+            # elif game_over and row == len(open_cells):
+            #     text = "💀" if field[row][col] == 0 else "✅"
+            #     callback = "tower_opened"
 
+            row_buttons.append(InlineKeyboardButton(text, callback_data=callback))
         keyboard.append(row_buttons)
 
     # Кнопка забрать
@@ -61,13 +61,12 @@ def create_field(difficulty: int) -> list:
     """
     Создаёт минное поле
     :param difficulty: сложность
-    :return: поле с 25 клетками
+    :return: поле с 40 клетками
     """
 
     field = []
-    difficulty = min(4, difficulty)
-    for row in range(5):
-        r = [0] * difficulty + [1] * (5-difficulty)
+    for row in range(8):
+        r = [0] * difficulty + [1] * (5 - difficulty)
         shuffle(r)
         field.append(r)
     return field
@@ -267,9 +266,15 @@ async def handle_tower_action(update: Update, context: ContextTypes.DEFAULT_TYPE
     if action == "tower":
 
         # Уже открыта — просто игнор
-        if row >= len(open_cells):
+        try:
             if cell == open_cells[row]:
                 return
+        except IndexError:
+            pass
+
+        # Не тот этаж нажат
+        if row > len(open_cells):
+            return
 
         open_cells.append(cell)
 
@@ -306,7 +311,7 @@ async def handle_tower_action(update: Update, context: ContextTypes.DEFAULT_TYPE
 
         # ✅ Безопасная клетка — просто обновляем поле
         else:
-            if len(open_cells) == 5:
+            if len(open_cells) == 8:
                 steps = len(open_cells)
                 multiplier = count_multiplier(steps, difficulty)
                 win_amount = int(bet * multiplier)

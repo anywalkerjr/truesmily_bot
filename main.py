@@ -47,6 +47,7 @@ async def set_commands(app):
         BotCommand("exp_case", "🎁 Кейс опыта"),
         BotCommand("duel", "⚔️ Дуэль"),
         BotCommand("mines", "💣 Минки"),
+        BotCommand("tower", "🛕 Башня"),
 
         # Топы
         BotCommand("top", "🏆 Топ по балансу"),
