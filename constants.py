@@ -13,6 +13,11 @@ DB_CONFIG = {
     'database': os.getenv("DB_NAME"),
     'autocommit': True
 }
+safe_db_config = {
+    **DB_CONFIG,
+    "password": "***" if DB_CONFIG.get("password") else None
+}
+print(f"Подключаюсь к БД: {safe_db_config}...")
 
 # ======================= ОБЩИЕ ИГРОВЫЕ НАСТРОЙКИ =======================
 
@@ -489,7 +494,12 @@ BUSINESS_LIST = [
 
 ]
 BUSINESS_LIST.sort(key=lambda x: x["price"])
-
+PROXY_URL = (
+    os.getenv("PROXY_URL")
+    or os.getenv("HTTPS_PROXY")
+    or os.getenv("HTTP_PROXY")
+    or os.getenv("ALL_PROXY")
+)
 TOKEN = os.getenv("BOT_TOKEN")
 
 REF_SYSTEM = {
@@ -507,7 +517,7 @@ REF_SYSTEM = {
 
 __all__ = [
     # Конфиг
-    'DB_CONFIG', 'TOKEN',
+    'DB_CONFIG', 'TOKEN', 'PROXY_URL',
 
     # Общие
     'MIN_BET', 'BASE_XP', 'XP_FACTOR', 'MAX_LEVEL', 'LEVELS',

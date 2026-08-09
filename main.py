@@ -5,7 +5,7 @@ from telegram.ext import (
 )
 from blackjack import blackjack, handle_blackjack_action
 from buy_smiles import show_donate_menu, button_callback_handler, precheckout_handler, success_payment_handler
-from constants import TOKEN
+from constants import TOKEN, PROXY_URL
 from roulette import roulette, game, check_all_games
 from talents import talents, talent_info, upgrade_talent
 from shop import shop, shop_callback, my_biz, check_all_incomes
@@ -70,7 +70,11 @@ async def set_commands(app):
         BotCommand("ref", "👥 Реферальная ссылка"),
     ]
 
-    await app.bot.set_my_commands(commands)
+    try:
+        await app.bot.set_my_commands(commands)
+    except (TimedOut, NetworkError) as e:
+        # Не роняем запуск бота из-за сетевого сбоя на этапе установки меню команд.
+        logging.getLogger(__name__).warning("set_my_commands failed: %s", e)
 
 
 # ======================= ОБРАБОТЧИК ТЕКСТА (КНОПКИ) =======================
@@ -111,7 +115,16 @@ def build_bot(token: str):
     Returns:
         Настроенное приложение
     """
-    app = ApplicationBuilder().token(token).build()
+    builder = ApplicationBuilder().token(token)
+    proxy_url = (PROXY_URL or "").strip()
+
+    if proxy_url:
+        builder = builder.proxy(proxy_url).get_updates_proxy(proxy_url)
+        print(f"🌐 Telegram proxy enabled: {proxy_url}")
+    else:
+        print("🌐 Telegram proxy disabled")
+
+    app = builder.build()
 
     # Установка команд меню
     app.post_init = set_commands
@@ -303,10 +316,6 @@ def build_bot(token: str):
 # ======================= ЗАПУСК =====
 
 if __name__ == "__main__":
-    # ⚠️ ВНИМАНИЕ: Не храни токен в коде! Используй переменные окружения!
-    # import os
-    # TOKEN = os.getenv("BOT_TOKEN")
-
     app = build_bot(TOKEN)
 
     print("✅ Smily запущен!")

@@ -427,9 +427,11 @@ def ensure_user_exists(user) -> bool:
             conn.commit()
             return False
         else:
+            # Обновляем профильные поля при каждом обращении:
+            # username/first_name могут измениться в Telegram в любой момент.
             cursor.execute(
-                "UPDATE users SET last_seen = CURRENT_TIMESTAMP WHERE telegram_id = %s",
-                (user.id,)
+                "UPDATE users SET username = %s, first_name = %s, last_seen = CURRENT_TIMESTAMP WHERE telegram_id = %s",
+                (user.username, user.first_name, user.id)
             )
             conn.commit()
             return True
