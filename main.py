@@ -54,6 +54,7 @@ async def set_commands(app):
         BotCommand("lucky_wheel", "🎡 Колесо удачи"),
         BotCommand("duel", "⚔️ Дуэль"),
         BotCommand("mines", "💣 Минки"),
+        BotCommand("crash", "🚀 Краш"),
         BotCommand("tower", "🛕 Башня"),
 
         # Топы
@@ -62,7 +63,7 @@ async def set_commands(app):
 
         # Экономика
         BotCommand("shop", "🛒 Магазин"),
-        BotCommand("cases", "📦 Магазин кейсов"),
+        BotCommand("cases", "📦 Кейсы"),
         BotCommand("my_biz", "🏢 Мои бизнесы"),
         BotCommand("talents", "✨ Таланты"),
         BotCommand("give", "💸 Передать деньги"),
