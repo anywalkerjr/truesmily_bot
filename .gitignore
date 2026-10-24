@@ -5,7 +5,11 @@ venv/
 
 # IDE (PyCharm)
 .idea/
+.vscode/
 
 # Python кэш
 __pycache__/
 *.py[cod]
+
+full_project_code.txt
+pack_code.py
